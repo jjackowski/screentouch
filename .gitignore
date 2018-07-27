@@ -1,0 +1,10 @@
+# backup files
+*~
+# binaries & other build outputs
+bin/
+# SCons output
+config.log
+.conf/
+.sconsign.dblite
+# local stuffs
+localbuildconfig*
