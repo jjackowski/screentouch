@@ -66,6 +66,7 @@ Evdev &Evdev::operator=(Evdev &&old) {
 	old.dev = nullptr;
 	fd = old.fd;
 	old.fd = -1;
+	return *this;
 }
 
 void Evdev::respond(int) {

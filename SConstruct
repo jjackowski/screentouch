@@ -59,7 +59,7 @@ env = Environment(variables = buildopts,
 	],
 	# options passed to C++ compiler
 	CXXFLAGS = [
-		'-std=c++11'
+		'-std=c++17'
 	],
 	# macros
 	CPPDEFINES = [
@@ -129,7 +129,7 @@ Default('dbg')
 
 #####
 # setup help text for the build options
-Help(buildopts.GenerateHelpText(dbgenv, cmp))
+Help(buildopts.GenerateHelpText(dbgenv))
 #if GetOption('help'):
 #	print 'Build target aliases:'
 #	print '  libs-dbg    - All libraries; debugging build. This is the default.'
