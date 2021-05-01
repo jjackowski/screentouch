@@ -14,7 +14,6 @@ import platform
 #####
 # setup the build options
 buildopts = Variables('localbuildconfig.py')
-buildopts.Add(BoolVariable('debug', 'Produce a debugging build', True))
 buildopts.Add('CCDBGFLAGS',
 	'The flags to use with the compiler for debugging builds.',
 	'-g -fno-common -Og')
@@ -130,11 +129,8 @@ Default('dbg')
 #####
 # setup help text for the build options
 Help(buildopts.GenerateHelpText(dbgenv))
-#if GetOption('help'):
-#	print 'Build target aliases:'
-#	print '  libs-dbg    - All libraries; debugging build. This is the default.'
-#	print '  libs        - Same as libs-dbg'
-#	print '  samples-dbg - All sample programs; debugging build.'
-#	print '  samples     - Same as samples-dbg.'
-#	print '  tests-dbg   - All unit test programs; debugging build.'
-#	print '  tests       - Same as tests-dbg.'
+if GetOption('help'):
+	print('Build target aliases:')
+	print('  dbg    Debug build. This is the default.')
+	print('  opt    Optimized build.')
+	print('')
