@@ -39,6 +39,10 @@ void MtTranslate::init() {
 		EventTypeCode(EV_SYN, SYN_REPORT),
 		boost::bind(&MtTranslate::synEvent, this)
 	);
+	evdev->inputConnect(
+		EventTypeCode(EV_KEY, KEY_LEFTMETA),
+		boost::bind(&MtTranslate::buttonEvent, this, _2)
+	);
 }
 
 MtTranslate::MtTranslate(const EvdevShared &ev) :
@@ -76,6 +80,17 @@ void MtTranslate::xPosEvent(std::int32_t val) {
 
 void MtTranslate::yPosEvent(std::int32_t val) {
 	slots[slot][cur].y = val;
+}
+
+void MtTranslate::buttonEvent(std::int32_t val) {
+	buttonHome = val;
+	/*
+	* if (buttonHome) {
+	* 	...
+	* } else {
+	* 	...
+	* }
+	*/
 }
 
 void MtTranslate::synEvent() {

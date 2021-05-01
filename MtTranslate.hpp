@@ -89,6 +89,10 @@ class MtTranslate {
 	 */
 	int cursorY;
 	/**
+	 * State of the capacitive button found on most tablets and some laptops.
+	 */
+	int buttonHome;
+	/**
 	 * The set of mouse-like input operations that are implemented.
 	 */
 	enum Operation {
@@ -124,6 +128,10 @@ class MtTranslate {
 	 * Responds to ABS_MT_POSITION_Y input events.
 	 */
 	void yPosEvent(std::int32_t val);
+	/**
+	 * Responds to KEY_LEFTMETA touchscreen capacitive button events.
+	 */
+	void buttonEvent(std::int32_t val);
 	/**
 	 * Responds to SYN_REPORT input events.
 	 */
