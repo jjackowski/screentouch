@@ -1,4 +1,4 @@
-/*
+ /*
  * This file is part of the Screentouch project. It is subject to the GPLv3
  * license terms in the LICENSE file found in the top-level directory of this
  * distribution and at
@@ -64,8 +64,8 @@ protected:
 	typedef std::map<EventTypeCode, InputSignal>  InputMap;
 	InputMap receivers;
 	libevdev *dev;
-	int fd;
 public:
+	int fd;
 	Evdev(const std::string &path);
 	Evdev(Evdev &&e);
 	~Evdev();
@@ -91,7 +91,7 @@ public:
 	void usePoller(Poller &p);
 	boost::signals2::connection inputConnect(
 		EventTypeCode etc,
-		const InputSignal::slot_type &slot, // use boost::bind, not std::bind
+		const InputSignal::slot_type &slot,
 		boost::signals2::connect_position at = boost::signals2::at_back
 	) {
 		return receivers[etc].connect(slot, at);

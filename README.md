@@ -17,21 +17,37 @@ One dimensional scrolling selects either the horizontal or vertical axis based o
 
 Double click type action isn't working well at the moment.
 
-# Raspbian
+# Distributions
 
-I haven't tried to build the program on Raspbian, but that should work. However, I have built it on Gentoo, copied it to a Raspbian install, and it ran just fine. See the running section below.
+I have built on these, and they work fine:
+- Gentoo
+- Raspberry Pi OS / Raspbian
+- Ubuntu
+
+I have only tested input successfully with the Raspberry Pi touchscreen. A touchscreen that doesn't work well with Linux isn't going to work with screentouch.
+
+# Quick start
+
+- Meet the build prerequisites (see below).
+- Build by running "scons" in the directory with the source code.
+- As root, run "bin/*/screentouch /dev/input/event*" from the same directory.
+  - This may require using sudo depending on your system configuration.
+- If something above fails, read below; there may be an answer there.
 
 # Building
 
 Prerequisites:
-- gcc with C++11 support
-- Boost Exception and Signals2 libraries, version 1.50 and up
+- gcc with C++17 support
+- Boost Exception and Signals2 libraries, version 1.67 and up
 - libevdev, version 1.57 works but older may be fine
-- Scons, version 2.x
+  - If your Linux distribution makes a distinction between development and non-development libraries, you'll need the development one. The distinction is common on distributions that normally install pre-built binaries, like Raspberry Pi OS and Ubuntu.
+- Scons, version 2.x or 3.x
 
-Run scons from the directory with the SConstruct file. If successful, the results will be under a directory for the host's platform under the bin directory.
+Run scons from the directory with the SConstruct file. If successful, the results will be under a directory for the host's platform under the bin directory. The default options, running "scons" without arguments, will result in a debug build. For an optimized build, make the opt target: "scons opt".
 
-The build has several options that can be changed if the defaults cause trouble. They are shown by running "scons -h". Change them by adding OPTIONNAME=value as an argument to scons.
+The build has several options that can be changed if the defaults cause trouble. They are shown by running "scons -h". Change them by adding OPTIONNAME=value as an argument to scons like this example:
+
+scons EVDEVINC=/usr/include/libevdev
 
 # Running
 

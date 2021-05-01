@@ -79,19 +79,34 @@ class MtTranslate {
 	 */
 	int cntctOld;
 	/**
-	 * The location used for the cursor. It is the previous location for most
+	 * The location of the finger. It is the previous location for most
 	 * of synEvent().
 	 */
-	int cursorX;
-	/**
-	 * The location used for the cursor. It is the previous location for most
-	 * of synEvent().
-	 */
-	int cursorY;
+	int relativeX;
+	int relativeY;
 	/**
 	 * State of the capacitive button found on most tablets and some laptops.
 	 */
 	int buttonHome;
+	/**
+	 * Resolution of touch-screen digitizer (may differ from display resolution)
+	 */
+	int maxX = 2000;
+	int maxY = 1400;
+	/**
+	 * Dragging operation flag.
+	 */
+	bool DragLeftBegin;
+	/**
+	 * Most recent tap location
+	 */
+	int tapX;
+	int tapY;
+	/**
+	 * Absolute Poiner location
+	 */
+	int cursorX;
+	int cursorY;	
 	/**
 	 * The set of mouse-like input operations that are implemented.
 	 */
@@ -106,7 +121,8 @@ class MtTranslate {
 		MoveCursor,
 		ScrollVert,
 		ScrollHoriz,
-		Scroll2D  // 3-finger scroll; seems to not work with Firefox
+		Scroll2D,  // 3-finger scroll; seems to not work with Firefox
+		DoubleClick
 	};
 	/**
 	 * The current mouse-like input operation.
@@ -145,6 +161,21 @@ class MtTranslate {
 	 * to have moved. Mitigates apparent noise in the location.
 	 */
 	static constexpr int moveDist = 5;
+	/**
+	 * Acceleration factor and distance
+	 */
+	// moving cursor at accelDist1 pixels at a time
+	// produces multiply this distance by accelFactor1
+	static const int accelDist1 = 1;
+	static const int accelFactor1 = 1;
+	// moving cursor at accelDist2 pixels at a time
+	// produces multiply this distance by accelFactor2
+	static const int accelDist2 = 6;
+	static const int accelFactor2 = 2;
+	// moving cursor at more pixels at a time
+	// produces multiply this distance by accelFactor3
+	static const int accelFactor3 = 4;
+
 	/**
 	 * A length of time between tap-like contacts of the screen used to
 	 * implement different behavior when an operation requires mutlple contacts

@@ -13,36 +13,48 @@
 #include <iostream>
 
 void MtTranslate::init() {
-	cur = slot = scnt = cntctCur = cntctOld = cursorX = cursorY = 0;
+	cur = slot = scnt = cntctCur = cntctOld = relativeX = relativeY = 0;
 	old = 1;
 	curOp = None;
 	eventtime = std::chrono::steady_clock::now();
 	// configure reception of mulit-touch input events
 	evdev->inputConnect(
 		EventTypeCode(EV_ABS, ABS_MT_SLOT),
-		// MUST use boost::bind, not std::bind, here
-		boost::bind(&MtTranslate::slotEvent, this, _2)
+		std::bind(&MtTranslate::slotEvent, this, std::placeholders::_2)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_ABS, ABS_MT_TRACKING_ID),
-		boost::bind(&MtTranslate::trackEvent, this, _2)
+		std::bind(&MtTranslate::trackEvent, this, std::placeholders::_2)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_ABS, ABS_MT_POSITION_X),
-		boost::bind(&MtTranslate::xPosEvent, this, _2)
+		std::bind(&MtTranslate::xPosEvent, this, std::placeholders::_2)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_ABS, ABS_MT_POSITION_Y),
-		boost::bind(&MtTranslate::yPosEvent, this, _2)
+		std::bind(&MtTranslate::yPosEvent, this, std::placeholders::_2)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_SYN, SYN_REPORT),
-		boost::bind(&MtTranslate::synEvent, this)
+		std::bind(&MtTranslate::synEvent, this)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_KEY, KEY_LEFTMETA),
-		boost::bind(&MtTranslate::buttonEvent, this, _2)
+		std::bind(&MtTranslate::buttonEvent, this, std::placeholders::_2)
 	);
+	// get digitizer resolution
+	int paramsX[6] = {};
+	int paramsY[6] = {};
+	ioctl(evdev->fd, EVIOCGABS(ABS_MT_POSITION_X), paramsX);
+	ioctl(evdev->fd, EVIOCGABS(ABS_MT_POSITION_Y), paramsY);
+	if (paramsX[2]) {
+		maxX = paramsX[2];
+		cursorX = maxX / 2;
+	}
+	if (paramsY[2]) {
+		maxY = paramsY[2];
+		cursorY = maxY / 2;
+	}
 }
 
 MtTranslate::MtTranslate(const EvdevShared &ev) :
@@ -86,8 +98,10 @@ void MtTranslate::buttonEvent(std::int32_t val) {
 	buttonHome = val;
 	/*
 	* if (buttonHome) {
+	* 	// key pressed
 	* 	...
 	* } else {
+	* 	// key released
 	* 	...
 	* }
 	*/
@@ -96,10 +110,14 @@ void MtTranslate::buttonEvent(std::int32_t val) {
 void MtTranslate::synEvent() {
 	timepoint currtime = std::chrono::steady_clock::now();
 	bool updateCursor = false;
-
+	
 	cntctCur = scnt;
 	// start contact
 	if (!cntctOld && cntctCur) {
+		tapX = slots[0][cur].x;
+		tapY = slots[0][cur].y;
+		relativeX = slots[0][cur].x;
+		relativeY = slots[0][cur].y;
 		// previous contact not long ago?
 		if (curOp && (curOp <= ReleaseMiddle)) {
 			duration span = currtime - eventtime;
@@ -109,6 +127,10 @@ void MtTranslate::synEvent() {
 					case ReleaseLeft:
 						curOp = DragLeft;
 						eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 1);
+						
+						
+						//--------------------------------------------------------
+						
 						break;
 					case ReleaseRight:
 						curOp = DragRight;
@@ -127,17 +149,19 @@ void MtTranslate::synEvent() {
 			eventtime = currtime;
 			// should always be the first slot
 			assert(slots[0][cur].tid >= 0);
-			// store contact position as cursor, but do not update cursor
-			cursorX = slots[0][cur].x;
-			cursorY = slots[0][cur].y;
 		}
 	}
 	// end contact
 	else if (!scnt) {
 		// move the cursor if not scrolling
-		if (curOp < ScrollVert) {
+		if ((curOp > None) && (curOp < ScrollVert)) {
 			updateCursor = true;
 		}
+		
+		
+		//-------------------------------------------------
+		
+		
 		switch (curOp) {
 			case None:
 				// change operation to release
@@ -147,6 +171,13 @@ void MtTranslate::synEvent() {
 			case DragLeft:
 				curOp = None;
 				eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 0);
+				
+				// request dragging with no movement, so it looks like double click
+				if (!DragLeftBegin) {
+					curOp = DoubleClick;
+				}
+				DragLeftBegin = false;
+				
 				break;
 			case DragRight:
 				curOp = None;
@@ -172,9 +203,12 @@ void MtTranslate::synEvent() {
 		// start cursor motion?
 		if (curOp == None) {
 			// look for a change
-			int deltaX = std::abs(slots[0][cur].x - cursorX);
-			int deltaY = std::abs(slots[0][cur].y - cursorY);
+			int deltaX = std::abs(slots[0][cur].x - relativeX);
+			int deltaY = std::abs(slots[0][cur].y - relativeY);
 			if ((deltaX > moveDist) || (deltaY > moveDist)) {
+				// update virtual coordinates to avoid cursor jumping moveDist
+				relativeX = slots[0][cur].x + 1;
+				relativeY = slots[0][cur].y + 1;
 				// request to move cursor?
 				if ((curOp == None) && (cntctCur == 1)) {
 					curOp = MoveCursor;
@@ -201,16 +235,28 @@ void MtTranslate::synEvent() {
 			// operation requires moving the cursor
 			(curOp >= DragLeft) && (curOp <= MoveCursor) &&
 			// position has changed
-			((cursorX != slots[0][cur].x) || (cursorY != slots[0][cur].y))
+			((relativeX != slots[0][cur].x) || (relativeY != slots[0][cur].y))
 		) {
+			// skip noisy cursor movement on start dragging so that 
+			// the system can recognize the double clicks
+			if ((curOp == DragLeft) && !DragLeftBegin) {
+				relativeX = slots[0][cur].x;
+				relativeY = slots[0][cur].y;
+				int deltaX = std::abs(slots[0][cur].x - tapX);
+				int deltaY = std::abs(slots[0][cur].y - tapY);
+				// skip dragging until the minimal move distance is reached
+				if ((deltaX > moveDist) || (deltaY > moveDist)) {
+					DragLeftBegin = true;
+				}
+			}
 			updateCursor = true;
 		}
 		// vertical scroll operation
 		else if ((curOp == ScrollVert) || (curOp == Scroll2D)) {
 			// look for a change
-			int delta = (slots[0][cur].y - cursorY) >> 3;
+			int delta = (slots[0][cur].y - relativeY) >> 3;
 			if (delta) {
-				cursorY = slots[0][cur].y;
+				relativeY = slots[0][cur].y;
 				eo.set(EventTypeCode(EV_REL, REL_WHEEL), delta);
 				sync = true;
 			}
@@ -218,9 +264,9 @@ void MtTranslate::synEvent() {
 		// horizontal scroll operation
 		else if ((curOp == ScrollHoriz) || (curOp == Scroll2D)) {
 			// look for a change
-			int delta = (cursorX - slots[0][cur].x) >> 3;
+			int delta = (relativeX - slots[0][cur].x) >> 3;
 			if (delta) {
-				cursorX = slots[0][cur].x;
+				relativeX = slots[0][cur].x;
 				eo.set(EventTypeCode(EV_REL, REL_HWHEEL), delta);
 				sync = true;
 			}
@@ -235,8 +281,34 @@ void MtTranslate::synEvent() {
 		// always using slot 0 is easy, but will cause cursor to suddenly move
 		// on mulitple finger double-tap if fingers contact in different order
 		// the second time
-		cursorX = slots[0][cur].x;
-		cursorY = slots[0][cur].y;
+		
+		int dx = slots[0][cur].x - relativeX;
+		int dy = slots[0][cur].y - relativeY;
+		relativeX = slots[0][cur].x;
+		relativeY = slots[0][cur].y;
+		
+		//acceleration
+		int k = 1;
+		if ((std::abs(dx) == accelDist1) || (std::abs(dy) == accelDist1)) {
+			k = accelFactor1;
+		} else if ((std::abs(dx) <= accelDist2) || (std::abs(dy) <= accelDist2)) {
+			k = accelFactor2;
+		} else {
+			k = accelFactor3;
+		}
+		cursorX = cursorX + dx * k;
+		cursorY = cursorY + dy * k;
+
+		// limit motion to screen boundaries
+		if (cursorX > maxX)
+			cursorX = maxX;
+		if (cursorX < 0)
+			cursorX = 0;
+		if (cursorY > maxY)
+			cursorY = maxY;
+		if (cursorY < 0)
+			cursorY = 0;
+
 		eo.set(EventTypeCode(EV_ABS, ABS_X), cursorX);
 		eo.set(EventTypeCode(EV_ABS, ABS_Y), cursorY);
 		eo.sync();
@@ -254,10 +326,6 @@ void MtTranslate::timeoutHandle() {
 		timepoint currtime = std::chrono::steady_clock::now();
 		duration span = currtime - eventtime;
 		if (span >= tapTime) {
-			// re-send position in case another input device moved the cursor
-			eo.set(EventTypeCode(EV_ABS, ABS_X), cursorX);
-			eo.set(EventTypeCode(EV_ABS, ABS_Y), cursorY);
-			// press button
 			int button;
 			switch (curOp) {
 				case ReleaseLeft:
@@ -281,11 +349,19 @@ void MtTranslate::timeoutHandle() {
 			//std::cout << "Released" << std::endl;
 			//logstate();
 		}
+	}  else if (curOp == DoubleClick) {
+		// send one more click, so system "Double Click Time" setting 
+		// should be longer than timeoutHandler intervar + time for tapping 
+		eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 1);
+		eo.sync();
+		eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 0);
+		eo.sync();
+		curOp = None;
 	}
 }
 
 void MtTranslate::logstate() const {
-	static const char *opstr[Scroll2D+1] = {
+	static const char *opstr[DoubleClick+1] = {
 		"None",
 		"RelLeft",
 		"RelRight",
@@ -296,11 +372,12 @@ void MtTranslate::logstate() const {
 		"MoveCursor",
 		"ScrollVert",
 		"ScrollHoriz",
-		"Scroll2D"
+		"Scroll2D",
+		"DoubleClick"
 	};
 	// prevously kept writing over the same line
 	std::cout /* << '\r' */ << std::setw(12) << opstr[curOp] << ' ' <<
-	std::setw(3) << cursorX << ", " << std::setw(3) << cursorY << "  " <<
+	std::setw(3) << relativeX << ", " << std::setw(3) << relativeY << "  " <<
 	std::setw(2) << cntctCur << "  ";// << std::endl; //"   ";
 	if (eo.get(EventTypeCode(EV_KEY, BTN_LEFT))) {
 		std::cout << 'L';
