@@ -20,24 +20,23 @@ void MtTranslate::init() {
 	// configure reception of mulit-touch input events
 	evdev->inputConnect(
 		EventTypeCode(EV_ABS, ABS_MT_SLOT),
-		// MUST use boost::bind, not std::bind, here
-		boost::bind(&MtTranslate::slotEvent, this, _2)
+		std::bind(&MtTranslate::slotEvent, this, std::placeholders::_2)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_ABS, ABS_MT_TRACKING_ID),
-		boost::bind(&MtTranslate::trackEvent, this, _2)
+		std::bind(&MtTranslate::trackEvent, this, std::placeholders::_2)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_ABS, ABS_MT_POSITION_X),
-		boost::bind(&MtTranslate::xPosEvent, this, _2)
+		std::bind(&MtTranslate::xPosEvent, this, std::placeholders::_2)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_ABS, ABS_MT_POSITION_Y),
-		boost::bind(&MtTranslate::yPosEvent, this, _2)
+		std::bind(&MtTranslate::yPosEvent, this, std::placeholders::_2)
 	);
 	evdev->inputConnect(
 		EventTypeCode(EV_SYN, SYN_REPORT),
-		boost::bind(&MtTranslate::synEvent, this)
+		std::bind(&MtTranslate::synEvent, this)
 	);
 }
 

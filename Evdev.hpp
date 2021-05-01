@@ -91,7 +91,7 @@ public:
 	void usePoller(Poller &p);
 	boost::signals2::connection inputConnect(
 		EventTypeCode etc,
-		const InputSignal::slot_type &slot, // use boost::bind, not std::bind
+		const InputSignal::slot_type &slot,
 		boost::signals2::connect_position at = boost::signals2::at_back
 	) {
 		return receivers[etc].connect(slot, at);
