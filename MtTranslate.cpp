@@ -114,6 +114,7 @@ void MtTranslate::synEvent() {
 	cntctCur = scnt;
 	// start contact
 	if (!cntctOld && cntctCur) {
+		contacttime = currtime;
 		tapX = slots[0][cur].x;
 		tapY = slots[0][cur].y;
 		relativeX = slots[0][cur].x;
@@ -127,10 +128,6 @@ void MtTranslate::synEvent() {
 					case ReleaseLeft:
 						curOp = DragLeft;
 						eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 1);
-						
-						
-						//--------------------------------------------------------
-						
 						break;
 					case ReleaseRight:
 						curOp = DragRight;
@@ -157,15 +154,14 @@ void MtTranslate::synEvent() {
 		if ((curOp > None) && (curOp < ScrollVert)) {
 			updateCursor = true;
 		}
-		
-		
-		//-------------------------------------------------
-		
-		
 		switch (curOp) {
 			case None:
-				// change operation to release
-				curOp = ReleaseLeft - 1 + cntctOld;
+				if (!tapRightClick) {
+					// change operation to release
+					curOp = ReleaseLeft - 1 + cntctOld;
+				} else {
+					tapRightClick = false;
+				}
 				eventtime = currtime;
 				break;
 			case DragLeft:
@@ -202,6 +198,18 @@ void MtTranslate::synEvent() {
 		bool sync = false;
 		// start cursor motion?
 		if (curOp == None) {
+			
+			// initial design of tap and hold for right button click function
+			// it simple uses noicy skipped cursor movements, no timeout handling
+			duration span = currtime - contacttime;
+			if ((span > tapRightClickDuration) && !tapRightClick) {
+				eo.set(EventTypeCode(EV_KEY, BTN_RIGHT), 1);
+				eo.sync();
+				eo.set(EventTypeCode(EV_KEY, BTN_RIGHT), 0);
+				eo.sync();
+				tapRightClick = true;
+			}
+			
 			// look for a change
 			int deltaX = std::abs(slots[0][cur].x - relativeX);
 			int deltaY = std::abs(slots[0][cur].y - relativeY);
@@ -230,6 +238,7 @@ void MtTranslate::synEvent() {
 				}
 			}
 		}
+		
 		// current operation involves moving the cursor
 		if (
 			// operation requires moving the cursor
@@ -357,6 +366,8 @@ void MtTranslate::timeoutHandle() {
 		eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 0);
 		eo.sync();
 		curOp = None;
+	} else if (tapRightClick) {
+		tapRightClick = false;
 	}
 }
 

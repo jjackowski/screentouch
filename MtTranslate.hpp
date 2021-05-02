@@ -52,6 +52,7 @@ class MtTranslate {
 	 * user quickly touches the screen again for a drag operation.
 	 */
 	timepoint eventtime;
+	timepoint contacttime;
 	/**
 	 * Index of the most current touch information in the StateHist arrays.
 	 */
@@ -97,6 +98,10 @@ class MtTranslate {
 	 * Dragging operation flag.
 	 */
 	bool DragLeftBegin;
+	/**
+	 * Tap and hold right button click sent flag.
+	 */
+	bool tapRightClick;
 	/**
 	 * Most recent tap location
 	 */
@@ -160,7 +165,7 @@ class MtTranslate {
 	 * The minimum distance an initial contact must move before it is considered
 	 * to have moved. Mitigates apparent noise in the location.
 	 */
-	static constexpr int moveDist = 5;
+	static constexpr int moveDist = 10;
 	/**
 	 * Acceleration factor and distance
 	 */
@@ -183,6 +188,11 @@ class MtTranslate {
 	 */
 	static constexpr std::chrono::milliseconds tapTime =
 		std::chrono::milliseconds(192);
+	/**
+	 * Tap and hold duration without movement to send right button click 
+	 */
+	static constexpr std::chrono::milliseconds tapRightClickDuration =
+		std::chrono::milliseconds(1000);
 	/**
 	 * Logs to stdout what is going on for debugging.
 	 */
