@@ -53,6 +53,10 @@ class MtTranslate {
 	 */
 	timepoint eventtime;
 	/**
+	 * The time when tap occurred.
+	 */
+	timepoint contacttime;
+	/**
 	 * Index of the most current touch information in the StateHist arrays.
 	 */
 	int cur;
@@ -79,15 +83,38 @@ class MtTranslate {
 	 */
 	int cntctOld;
 	/**
-	 * The location used for the cursor. It is the previous location for most
+	 * The location of the finger. It is the previous location for most
 	 * of synEvent().
+	 */
+	int relativeX;
+	int relativeY;
+	/**
+	 * State of the capacitive button found on most tablets and some laptops.
+	 */
+	int buttonHome;
+	/**
+	 * Resolution of touch-screen digitizer (may differ from display resolution)
+	 */
+	int maxX = 2000;
+	int maxY = 1400;
+	/**
+	 * Dragging operation flag.
+	 */
+	bool DragLeftBegin;
+	/**
+	 * Tap and hold right button click sent flag.
+	 */
+	bool tapRightClick;
+	/**
+	 * Most recent tap location
+	 */
+	int tapX;
+	int tapY;
+	/**
+	 * Absolute Poiner location
 	 */
 	int cursorX;
-	/**
-	 * The location used for the cursor. It is the previous location for most
-	 * of synEvent().
-	 */
-	int cursorY;
+	int cursorY;	
 	/**
 	 * The set of mouse-like input operations that are implemented.
 	 */
@@ -102,7 +129,8 @@ class MtTranslate {
 		MoveCursor,
 		ScrollVert,
 		ScrollHoriz,
-		Scroll2D  // 3-finger scroll; seems to not work with Firefox
+		Scroll2D,  // 3-finger scroll; seems to not work with Firefox
+		DoubleClick
 	};
 	/**
 	 * The current mouse-like input operation.
@@ -125,6 +153,10 @@ class MtTranslate {
 	 */
 	void yPosEvent(std::int32_t val);
 	/**
+	 * Responds to KEY_LEFTMETA touchscreen capacitive button events.
+	 */
+	void buttonEvent(std::int32_t val);
+	/**
 	 * Responds to SYN_REPORT input events.
 	 */
 	void synEvent();
@@ -136,7 +168,22 @@ class MtTranslate {
 	 * The minimum distance an initial contact must move before it is considered
 	 * to have moved. Mitigates apparent noise in the location.
 	 */
-	static constexpr int moveDist = 5;
+	static constexpr int moveDist = 10;
+	/**
+	 * Acceleration factor and distance
+	 */
+	// Moving cursor up to accelDist1 pixels at a time
+	// produces multiplication of this distance by accelFactor1
+	static const int accelDist1 = 1;
+	static const int accelFactor1 = 1;
+	// Moving cursor up to accelDist2 pixels at a time
+	// produces multiplication of this distance by accelFactor2
+	static const int accelDist2 = 6;
+	static const int accelFactor2 = 2;
+	// Moving cursor for greater distance at a time
+	// produces multiplication of this distance by accelFactor3
+	static const int accelFactor3 = 4;
+
 	/**
 	 * A length of time between tap-like contacts of the screen used to
 	 * implement different behavior when an operation requires mutlple contacts
@@ -144,6 +191,11 @@ class MtTranslate {
 	 */
 	static constexpr std::chrono::milliseconds tapTime =
 		std::chrono::milliseconds(192);
+	/**
+	 * Tap and hold duration without movement to send right button click 
+	 */
+	static constexpr std::chrono::milliseconds tapRightClickDuration =
+		std::chrono::milliseconds(1000);
 	/**
 	 * Logs to stdout what is going on for debugging.
 	 */

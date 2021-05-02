@@ -1,4 +1,4 @@
-/*
+ /*
  * This file is part of the Screentouch project. It is subject to the GPLv3
  * license terms in the LICENSE file found in the top-level directory of this
  * distribution and at
@@ -64,8 +64,8 @@ protected:
 	typedef std::map<EventTypeCode, InputSignal>  InputMap;
 	InputMap receivers;
 	libevdev *dev;
-	int fd;
 public:
+	int fd;
 	Evdev(const std::string &path);
 	Evdev(Evdev &&e);
 	~Evdev();
