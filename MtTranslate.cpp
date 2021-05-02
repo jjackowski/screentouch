@@ -366,8 +366,6 @@ void MtTranslate::timeoutHandle() {
 		eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 0);
 		eo.sync();
 		curOp = None;
-	} else if (tapRightClick) {
-		tapRightClick = false;
 	}
 }
 

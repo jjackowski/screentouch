@@ -52,6 +52,9 @@ class MtTranslate {
 	 * user quickly touches the screen again for a drag operation.
 	 */
 	timepoint eventtime;
+	/**
+	 * The time when tap occurred.
+	 */
 	timepoint contacttime;
 	/**
 	 * Index of the most current touch information in the StateHist arrays.
