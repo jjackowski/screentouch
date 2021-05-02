@@ -297,8 +297,8 @@ void MtTranslate::synEvent() {
 		relativeY = slots[0][cur].y;
 		
 		//acceleration
-		int k = 1;
-		if ((std::abs(dx) == accelDist1) || (std::abs(dy) == accelDist1)) {
+		int k;
+		if ((std::abs(dx) <= accelDist1) || (std::abs(dy) <= accelDist1)) {
 			k = accelFactor1;
 		} else if ((std::abs(dx) <= accelDist2) || (std::abs(dy) <= accelDist2)) {
 			k = accelFactor2;

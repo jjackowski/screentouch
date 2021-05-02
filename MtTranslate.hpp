@@ -172,16 +172,16 @@ class MtTranslate {
 	/**
 	 * Acceleration factor and distance
 	 */
-	// moving cursor at accelDist1 pixels at a time
-	// produces multiply this distance by accelFactor1
+	// Moving cursor up to accelDist1 pixels at a time
+	// produces multiplication of this distance by accelFactor1
 	static const int accelDist1 = 1;
 	static const int accelFactor1 = 1;
-	// moving cursor at accelDist2 pixels at a time
-	// produces multiply this distance by accelFactor2
+	// Moving cursor up to accelDist2 pixels at a time
+	// produces multiplication of this distance by accelFactor2
 	static const int accelDist2 = 6;
 	static const int accelFactor2 = 2;
-	// moving cursor at more pixels at a time
-	// produces multiply this distance by accelFactor3
+	// Moving cursor for greater distance at a time
+	// produces multiplication of this distance by accelFactor3
 	static const int accelFactor3 = 4;
 
 	/**
