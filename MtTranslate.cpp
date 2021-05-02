@@ -155,6 +155,9 @@ void MtTranslate::synEvent() {
 			updateCursor = true;
 		}
 		switch (curOp) {
+			case MoveCursor:
+				tapRightClick = false;
+				break;
 			case None:
 				if (!tapRightClick) {
 					// change operation to release
