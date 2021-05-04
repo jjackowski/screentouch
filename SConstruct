@@ -30,6 +30,18 @@ buildopts.Add('LINKOPTFLAGS',
 buildopts.Add(PathVariable('BOOSTINC',
 	'The directory containing the Boost header files, or "." for the system default.',
 	'.')) #, PathVariable.PathAccept))
+buildopts.Add(PathVariable('BOOSTLIB',
+	'The directory containing the Boost libraries, or "." for the system default.',
+	'.')) #, PathVariable.PathAccept))
+buildopts.Add('BOOSTTOOLSET',
+	'The toolset tag for Boost libraries. Include a leading dash.',
+	'')
+buildopts.Add('BOOSTTAG',
+	'Additional tags for Boost libraries. The libraries must support threading. Include leading dashes.',
+	'')  # '-mt')
+buildopts.Add('BOOSTVER',
+	'The version tag for Boost libraries. Include a leading dash.',
+	'')
 buildopts.Add(PathVariable('EVDEVINC',
 	'The libevdev include path.',
 	'/usr/include/libevdev-1.0', PathVariable.PathAccept))
@@ -73,6 +85,7 @@ env = Environment(variables = buildopts,
 	LIBS = [  # required libraries
 		'pthread',
 		'evdev',
+		'libboost_program_options${BOOSTTOOLSET}${BOOSTTAG}${BOOSTABI}${BOOSTVER}'
 	]
 )
 

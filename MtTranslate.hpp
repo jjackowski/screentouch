@@ -109,6 +109,11 @@ class MtTranslate {
 	 */
 	int curOp;
 	/**
+	 * The minimum distance an initial contact must move before it is considered
+	 * to have moved. Mitigates apparent noise in the location.
+	 */
+	int moveDist;
+	/**
 	 * Responds to ABS_MT_SLOT input events.
 	 */
 	void slotEvent(std::int32_t val);
@@ -133,11 +138,6 @@ class MtTranslate {
 	 */
 	void init();
 	/**
-	 * The minimum distance an initial contact must move before it is considered
-	 * to have moved. Mitigates apparent noise in the location.
-	 */
-	static constexpr int moveDist = 5;
-	/**
 	 * A length of time between tap-like contacts of the screen used to
 	 * implement different behavior when an operation requires mutlple contacts
 	 * over time.
@@ -152,11 +152,11 @@ public:
 	/**
 	 * Makes a new input translator using the given device for input.
 	 */
-	MtTranslate(const EvdevShared &ev);
+	MtTranslate(const EvdevShared &ev, int movethres);
 	/**
 	 * Makes a new input translator using the given device for input.
 	 */
-	MtTranslate(EvdevShared &&ev);
+	MtTranslate(EvdevShared &&ev, int movethres);
 	// disconnect signal functions given to evdev
 	~MtTranslate();
 	/**

@@ -38,7 +38,10 @@ I have only tested input successfully with the Raspberry Pi touchscreen. A touch
 
 Prerequisites:
 - gcc with C++17 support
-- Boost Exception and Signals2 libraries, version 1.67 and up
+- Boost libraries, version 1.67 and up
+  - Exception (header only)
+  - Signals2 (header only)
+  - Program options
 - libevdev, version 1.57 works but older may be fine
   - If your Linux distribution makes a distinction between development and non-development libraries, you'll need the development one. The distinction is common on distributions that normally install pre-built binaries, like Raspberry Pi OS and Ubuntu.
 - Scons, version 2.x or 3.x

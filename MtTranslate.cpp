@@ -40,13 +40,13 @@ void MtTranslate::init() {
 	);
 }
 
-MtTranslate::MtTranslate(const EvdevShared &ev) :
-evdev(ev), eo(*evdev), slots(evdev->numSlots()) {
+MtTranslate::MtTranslate(const EvdevShared &ev, int movethres) :
+evdev(ev), eo(*evdev), slots(evdev->numSlots()), moveDist(movethres) {
 	init();
 }
 
-MtTranslate::MtTranslate(EvdevShared &&ev) :
-evdev(std::move(ev)), eo(*evdev), slots(evdev->numSlots()) {
+MtTranslate::MtTranslate(EvdevShared &&ev, int movethres) :
+evdev(std::move(ev)), eo(*evdev), slots(evdev->numSlots()), moveDist(movethres) {
 	init();
 }
 
