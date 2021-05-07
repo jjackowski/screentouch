@@ -12,6 +12,8 @@
 #include "MtTranslate.hpp"
 #include <iostream>
 
+
+
 void MtTranslate::init() {
 	cur = slot = scnt = cntctCur = cntctOld = relativeX = relativeY = 0;
 	old = 1;
@@ -42,17 +44,17 @@ void MtTranslate::init() {
 		EventTypeCode(EV_KEY, KEY_LEFTMETA),
 		std::bind(&MtTranslate::buttonEvent, this, std::placeholders::_2)
 	);
+
 	// get digitizer resolution
-	int paramsX[6] = {};
-	int paramsY[6] = {};
-	ioctl(evdev->fd, EVIOCGABS(ABS_MT_POSITION_X), paramsX);
-	ioctl(evdev->fd, EVIOCGABS(ABS_MT_POSITION_Y), paramsY);
-	if (paramsX[2]) {
-		maxX = paramsX[2];
+	const input_absinfo *ai;
+	ai = evdev->absInfo(ABS_X);
+	if (ai->maximum) {
+		maxX = ai->maximum - ai->minimum; // minimum might not be zero
 		cursorX = maxX / 2;
 	}
-	if (paramsY[2]) {
-		maxY = paramsY[2];
+	ai = evdev->absInfo(ABS_Y);
+	if (ai->maximum) {
+		maxY = ai->maximum - ai->minimum; // minimum might not be zero
 		cursorY = maxY / 2;
 	}
 }
@@ -94,17 +96,43 @@ void MtTranslate::yPosEvent(std::int32_t val) {
 	slots[slot][cur].y = val;
 }
 
+// Thus, jerks of the cursor movement are removed, when the display
+// resolution and the digitizer resolution are different, caused by
+// an error in translating the coordinates of the digitizer into the
+// coordinates of the display.
+//
+//void MtTranslate::yPosEvent(std::int32_t val) {
+//	if (onboardActive) {
+//		// no correction needed
+//		slots[slot][cur].y = val;
+//	} else {
+//		// Display height 1080 pixels. Digitizer height 1280 points. 
+//		// Every 64 points we have a hole in coordinates with a height of 
+//		// 10 pixels (... 58, 59, 69, 70 ... 122, 123, 133, 134 ...). 
+//		// This is how the system translates the coordinates of the digitizer 
+//		// into the coordinates of the display. Strange behavior.
+//		// So let's fix it for smooth operation.
+//		slots[slot][cur].y = val - ((val / 64) * 10);
+//	}
+//}
+
 void MtTranslate::buttonEvent(std::int32_t val) {
 	buttonHome = val;
-	/*
-	* if (buttonHome) {
-	* 	// key pressed
-	* 	...
-	* } else {
-	* 	// key released
-	* 	...
-	* }
-	*/
+	if (buttonHome) {
+		if (onboardActive) {
+			//hide onboard
+			system("nohup dbus-send --type=method_call --print-reply --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.Hide 2>&1 1>/dev/null &");	
+			onboardActive = false;
+			//restore cursor position
+			eo.set(EventTypeCode(EV_ABS, ABS_X), cursorX);
+			eo.set(EventTypeCode(EV_ABS, ABS_Y), cursorY);
+			eo.sync();
+		} else {
+			//show onboard
+			system("nohup dbus-send --type=method_call --print-reply --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.Show 2>&1 1>/dev/null &");
+			onboardActive = true;
+		}
+	}
 }
 
 void MtTranslate::synEvent() {
@@ -114,11 +142,21 @@ void MtTranslate::synEvent() {
 	cntctCur = scnt;
 	// start contact
 	if (!cntctOld && cntctCur) {
+		if (onboardActive) {
+			//cursor follows finger
+			eo.set(EventTypeCode(EV_ABS, ABS_X), slots[0][cur].x);
+			eo.set(EventTypeCode(EV_ABS, ABS_Y), slots[0][cur].y);
+			eo.sync();
+			//instant click and return
+			eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 1);			
+			eo.sync();
+			return;
+		}
 		contacttime = currtime;
 		tapX = slots[0][cur].x;
 		tapY = slots[0][cur].y;
 		relativeX = slots[0][cur].x;
-		relativeY = slots[0][cur].y;
+		relativeY = slots[0][cur].y;		
 		// previous contact not long ago?
 		if (curOp && (curOp <= ReleaseMiddle)) {
 			duration span = currtime - eventtime;
@@ -150,6 +188,13 @@ void MtTranslate::synEvent() {
 	}
 	// end contact
 	else if (!scnt) {
+		if (onboardActive) {
+			//release end return
+			eo.set(EventTypeCode(EV_KEY, BTN_LEFT), 0);			
+			eo.sync();
+			cntctOld = 0;
+			return;
+		}
 		// move the cursor if not scrolling
 		if ((curOp > None) && (curOp < ScrollVert)) {
 			updateCursor = true;
@@ -157,6 +202,7 @@ void MtTranslate::synEvent() {
 		switch (curOp) {
 			case MoveCursor:
 				tapRightClick = false;
+				curOp = None;
 				break;
 			case None:
 				if (!tapRightClick) {
@@ -194,6 +240,12 @@ void MtTranslate::synEvent() {
 		// fingers may come off one at a time; keep max contacts to make it
 		// easy to use right & middle buttons (2 & 3 contacts respectively)
 		cntctCur = cntctOld;
+	}
+
+
+	if (onboardActive) {
+		//only tapping allowed
+		return;
 	}
 
 	// cursor movement
@@ -261,6 +313,9 @@ void MtTranslate::synEvent() {
 					DragLeftBegin = true;
 				}
 			}
+			
+			// -----------------------------
+			
 			updateCursor = true;
 		}
 		// vertical scroll operation
@@ -293,7 +348,6 @@ void MtTranslate::synEvent() {
 		// always using slot 0 is easy, but will cause cursor to suddenly move
 		// on mulitple finger double-tap if fingers contact in different order
 		// the second time
-		
 		int dx = slots[0][cur].x - relativeX;
 		int dy = slots[0][cur].y - relativeY;
 		relativeX = slots[0][cur].x;

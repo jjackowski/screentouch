@@ -172,16 +172,16 @@ class MtTranslate {
 	/**
 	 * Acceleration factor and distance
 	 */
-	// Moving cursor up to accelDist1 pixels at a time
-	// produces multiplication of this distance by accelFactor1
+	// moving cursor at accelDist1 pixels at a time
+	// produces multiply this distance by accelFactor1
 	static const int accelDist1 = 1;
 	static const int accelFactor1 = 1;
-	// Moving cursor up to accelDist2 pixels at a time
-	// produces multiplication of this distance by accelFactor2
+	// moving cursor at accelDist2 pixels at a time
+	// produces multiply this distance by accelFactor2
 	static const int accelDist2 = 6;
 	static const int accelFactor2 = 2;
-	// Moving cursor for greater distance at a time
-	// produces multiplication of this distance by accelFactor3
+	// moving cursor at more pixels at a time
+	// produces multiply this distance by accelFactor3
 	static const int accelFactor3 = 4;
 
 	/**
@@ -195,11 +195,16 @@ class MtTranslate {
 	 * Tap and hold duration without movement to send right button click 
 	 */
 	static constexpr std::chrono::milliseconds tapRightClickDuration =
-		std::chrono::milliseconds(1000);
+		std::chrono::milliseconds(600);
 	/**
 	 * Logs to stdout what is going on for debugging.
 	 */
 	void logstate() const;
+	/**
+	 * Onboard activity flag.
+	 */
+	bool onboardActive;
+	
 public:
 	/**
 	 * Makes a new input translator using the given device for input.
