@@ -13,7 +13,6 @@
 #include <iostream>
 
 
-
 void MtTranslate::init() {
 	cur = slot = scnt = cntctCur = cntctOld = relativeX = relativeY = 0;
 	old = 1;
@@ -313,9 +312,6 @@ void MtTranslate::synEvent() {
 					DragLeftBegin = true;
 				}
 			}
-			
-			// -----------------------------
-			
 			updateCursor = true;
 		}
 		// vertical scroll operation
