@@ -64,8 +64,8 @@ protected:
 	typedef std::map<EventTypeCode, InputSignal>  InputMap;
 	InputMap receivers;
 	libevdev *dev;
-public:
 	int fd;
+public:
 	Evdev(const std::string &path);
 	Evdev(Evdev &&e);
 	~Evdev();
